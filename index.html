@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Treino Cruz</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b3d91">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Meu Treino Cruz">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+
+<style>
+body{font-family:Arial;background:#111;color:#fff;margin:0}
+header{background:#222;padding:15px;text-align:center}
+button{padding:10px 15px;margin:5px;border-radius:8px;border:none}
+.card{background:#222;padding:15px;margin:10px;border-radius:10px}
+</style>
+</head>
+
+<body>
+<header>
+<h2>🏋️ Meu Treino Cruz</h2>
+</header>
+
+<div class="card">SEG – Peito / Ombro / Tríceps</div>
+<div class="card">TER – Costas / Bíceps</div>
+<div class="card">QUA – Core</div>
+<div class="card">QUI – Pernas</div>
+<div class="card">SEX – Bíceps / Pernas</div>
+
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js");
+}
+</script>
+
+</body>
+</html>
