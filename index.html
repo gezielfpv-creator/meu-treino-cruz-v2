@@ -1,41 +1,240 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meu Treino Cruz</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meu Treino Cruz</title>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0b3d91">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Meu Treino Cruz">
-<link rel="apple-touch-icon" href="icons/icon-180.png">
+  <!-- PWA -->
+  <meta name="theme-color" content="#0b3d91" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Meu Treino Cruz" />
 
-<style>
-body{font-family:Arial;background:#111;color:#fff;margin:0}
-header{background:#222;padding:15px;text-align:center}
-button{padding:10px 15px;margin:5px;border-radius:8px;border:none}
-.card{background:#222;padding:15px;margin:10px;border-radius:10px}
-</style>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="ícones/icon-180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="ícones/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="ícones/icon-512.png" />
+
+  <style>
+    body { font-family: Arial, sans-serif; background: #111; color: #fff; margin: 0; padding-bottom: 80px; }
+    header { position: sticky; top: 0; background: #222; padding: 14px; display: flex; justify-content: space-between; align-items: center; }
+    .timerBox p { margin: 0; font-size: 12px; color: #bbb; }
+    #timer { font-size: 22px; font-family: monospace; }
+    .btn { background: #374151; color: #fff; padding: 8px 12px; border-radius: 10px; border: 0; cursor: pointer; }
+    .btnRed { background: #7f1d1d; }
+    .btnGreen { background: #16a34a; }
+    .btnYellow { background: #f59e0b; color:#111; }
+    nav { display: flex; gap: 8px; padding: 12px; overflow-x: auto; }
+    main { padding: 12px; display: grid; gap: 10px; }
+    .card { background: #1f2937; padding: 14px; border-radius: 14px; border-left: 4px solid #22c55e; }
+    .card.done { opacity: .55; text-decoration: line-through; }
+    .topRow { display:flex; justify-content: space-between; gap: 10px; align-items:center; }
+    .link { text-decoration: underline; cursor: pointer; }
+    .small { font-size: 13px; color:#cbd5e1; }
+    input[type="number"] { width: 70px; padding: 6px; border-radius: 10px; border: 1px solid #334155; background: #0b1220; color:#fff; text-align:center; }
+    .footer { position: fixed; bottom: 0; width: 100%; background:#222; padding: 12px; text-align:center; font-size: 14px; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.82); display: none; align-items: center; justify-content: center; z-index: 99; }
+    iframe { width: 92vw; height: 55vh; border: 0; border-radius: 12px; }
+    .title { margin: 8px 12px 0; font-size: 18px; font-weight: 700; }
+  </style>
 </head>
 
-<body>
-<header>
-<h2>🏋️ Meu Treino Cruz</h2>
-</header>
+<body id="body">
+  <header>
+    <div class="timerBox">
+      <p>Descanso</p>
+      <div id="timer">00:00</div>
+    </div>
 
-<div class="card">SEG – Peito / Ombro / Tríceps</div>
-<div class="card">TER – Costas / Bíceps</div>
-<div class="card">QUA – Core</div>
-<div class="card">QUI – Pernas</div>
-<div class="card">SEX – Bíceps / Pernas</div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn" onclick="startTimer(60)">60s</button>
+      <button class="btn btnRed" onclick="resetTimer()">X</button>
+    </div>
+  </header>
 
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js");
-}
-</script>
+  <nav>
+    <button class="btn" onclick="showDay('SEG')">SEG</button>
+    <button class="btn" onclick="showDay('TER')">TER</button>
+    <button class="btn" onclick="showDay('QUA')">QUA</button>
+    <button class="btn" onclick="showDay('QUI')">QUI</button>
+    <button class="btn" onclick="showDay('SEX')">SEX</button>
+    <button class="btn btnYellow" style="margin-left:auto;" onclick="toggleTheme()">☀️/🌙</button>
+  </nav>
 
+  <div class="title" id="dayTitle"></div>
+  <main id="list"></main>
+
+  <div class="footer">
+    📊 Concluídos: <span id="progress">0</span>
+  </div>
+
+  <div id="modal" class="modal" onclick="closeVideo()">
+    <iframe id="video" allowfullscreen></iframe>
+  </div>
+
+  <script>
+    const treinos = {
+      SEG: { titulo: "Peito / Ombro / Tríceps", lista: [
+        ["Supino Reto","4x10","https://www.youtube.com/embed/rT7DgCr-3pg"],
+        ["Inclinado","3x10","https://www.youtube.com/embed/SrqOu55lrYU"],
+        ["Desenvolvimento","4x10","https://www.youtube.com/embed/qEwKCR5JCog"],
+        ["Elevação Lateral","3x12","https://www.youtube.com/embed/3VcKaXpzqRo"],
+        ["Tríceps Corda","3x12","https://www.youtube.com/embed/2-LAMcpzODU"]
+      ]},
+      TER: { titulo: "Costas / Bíceps", lista: [
+        ["Puxada Alta","4x10","https://www.youtube.com/embed/CAwf7n6Luuc"],
+        ["Remada Curvada","3x10","https://www.youtube.com/embed/vT2GjY_Umpw"],
+        ["Rosca Direta","3x10","https://www.youtube.com/embed/kwG2ipFRgfo"],
+        ["Rosca Alternada","3x12","https://www.youtube.com/embed/eozdVDA78K0"]
+      ]},
+      QUA: { titulo: "Peito / Ombro / Core", lista: [
+        ["Crossover","3x12","https://www.youtube.com/embed/eozdVDA78K0"],
+        ["Supino Máquina","3x10","https://www.youtube.com/embed/rT7DgCr-3pg"],
+        ["Elevação Posterior","3x12","https://www.youtube.com/embed/3VcKaXpzqRo"],
+        ["Prancha","3x30s","https://www.youtube.com/embed/pSHjTRCQxIw"],
+        ["Infra","3x20","https://www.youtube.com/embed/1919eTCoESo"]
+      ]},
+      QUI: { titulo: "Pernas / Tríceps", lista: [
+        ["Agachamento","4x10","https://www.youtube.com/embed/1oed-UmAxFs"],
+        ["Leg Press","3x12","https://www.youtube.com/embed/IZxyjW7MPJQ"],
+        ["Extensora","3x12","https://www.youtube.com/embed/YyvSfVjQeL0"],
+        ["Panturrilha","3x15","https://www.youtube.com/embed/-M4-G8p8fmc"],
+        ["Tríceps Testa","3x10","https://www.youtube.com/embed/ir5PsbniVSc"]
+      ]},
+      SEX: { titulo: "Bíceps / Pernas", lista: [
+        ["Rosca Direta","3x10","https://www.youtube.com/embed/kwG2ipFRgfo"],
+        ["Rosca Martelo","3x10","https://www.youtube.com/embed/zC3nLlEvin4"],
+        ["Mesa Flexora","3x12","https://www.youtube.com/embed/1Tq3QdYUuHs"],
+        ["Leg Press","3x12","https://www.youtube.com/embed/IZxyjW7MPJQ"]
+      ]}
+    };
+
+    let atual = "SEG";
+
+    const listEl = document.getElementById("list");
+    const progressEl = document.getElementById("progress");
+    const timerEl = document.getElementById("timer");
+    const bodyEl = document.getElementById("body");
+    const modalEl = document.getElementById("modal");
+    const videoEl = document.getElementById("video");
+    const dayTitleEl = document.getElementById("dayTitle");
+
+    function showDay(d) {
+      atual = d;
+      const data = JSON.parse(localStorage.getItem("hist_" + d)) || {};
+
+      dayTitleEl.textContent = treinos[d].titulo;
+
+      let html = "";
+      for (let i = 0; i < treinos[d].lista.length; i++) {
+        const e = treinos[d].lista[i];
+        const done = data[i] && data[i].done ? "done" : "";
+        const peso = data[i] && data[i].peso ? data[i].peso : "";
+
+        html += `
+          <div id="ex${i}" class="card ${done}">
+            <div class="topRow">
+              <span class="link" onclick="openVideo('${e[2]}')">${e[0]}</span>
+              <button class="btn btnGreen" onclick="toggleDone(${i})">✔</button>
+            </div>
+            <div class="small">Séries: ${e[1]}</div>
+            <div class="small" style="display:flex; align-items:center; gap:8px;">
+              Peso:
+              <input type="number" value="${peso}" onchange="savePeso(${i}, this.value)" />
+              kg
+            </div>
+          </div>
+        `;
+      }
+      listEl.innerHTML = html;
+      updateProgress();
+    }
+
+    function toggleDone(i) {
+      const key = "hist_" + atual;
+      const data = JSON.parse(localStorage.getItem(key)) || {};
+      data[i] = data[i] || {};
+      data[i].done = !data[i].done;
+      localStorage.setItem(key, JSON.stringify(data));
+
+      const card = document.getElementById("ex" + i);
+      if (card) card.classList.toggle("done");
+
+      updateProgress();
+    }
+
+    function savePeso(i, val) {
+      const key = "hist_" + atual;
+      const data = JSON.parse(localStorage.getItem(key)) || {};
+      data[i] = data[i] || {};
+      data[i].peso = val;
+      localStorage.setItem(key, JSON.stringify(data));
+    }
+
+    function updateProgress() {
+      const data = JSON.parse(localStorage.getItem("hist_" + atual)) || {};
+      let count = 0;
+      for (const k in data) {
+        if (data[k] && data[k].done) count++;
+      }
+      progressEl.textContent = String(count);
+    }
+
+    function openVideo(url) {
+      videoEl.src = url;
+      modalEl.style.display = "flex";
+    }
+    function closeVideo() {
+      modalEl.style.display = "none";
+      videoEl.src = "";
+    }
+
+    let t = null;
+    function startTimer(s) {
+      clearInterval(t);
+      let r = s;
+      updateTimer(r);
+      t = setInterval(function() {
+        r--;
+        updateTimer(r);
+        if (r <= 0) {
+          clearInterval(t);
+          alert("Série concluída 💪");
+        }
+      }, 1000);
+    }
+    function resetTimer() {
+      clearInterval(t);
+      updateTimer(0);
+    }
+    function updateTimer(s) {
+      const m = Math.floor(s / 60);
+      const sec = s % 60;
+      const mm = String(m).padStart(2, "0");
+      const ss = String(sec).padStart(2, "0");
+      timerEl.textContent = mm + ":" + ss;
+    }
+
+    function toggleTheme() {
+      const dark = bodyEl.style.background === "" || bodyEl.style.background === "rgb(17, 17, 17)" || bodyEl.style.background === "#111";
+      if (dark) {
+        bodyEl.style.background = "#fff";
+        bodyEl.style.color = "#111";
+      } else {
+        bodyEl.style.background = "#111";
+        bodyEl.style.color = "#fff";
+      }
+    }
+
+    // Service Worker
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function() {
+        navigator.serviceWorker.register("./service-worker.js").catch(function(){});
+      });
+    }
+
+    showDay("SEG");
+  </script>
 </body>
 </html>
